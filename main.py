@@ -7,7 +7,7 @@ import time
 import plotly.express as px
 import plotly.graph_objects as go
 
-fin = sys.stdin
+fin = open(sys.argv[1], 'r') if len(sys.argv) > 1 else sys.stdin
 fout = sys.stdout
 
 for x in range(5):
@@ -29,6 +29,8 @@ def is_float(element: any) -> bool:
     except ValueError:
         return False
 
+markers = []
+
 while fin.readable():
     line = fin.readline()
     if not line:
@@ -47,6 +49,11 @@ while fin.readable():
             _l.append(0.0)
     data.append(_l)
 
+    row = line.split(',')
+    if len(row[0]) > 0:
+        #print(row[0],row[1])
+        markers.append([row[0],row[1]])
+
     #data.append([float(x.strip()) for x in line.split(',') if x.strip() != ''])
 
 def format_data(data:list):
@@ -63,7 +70,7 @@ def format_pairs(data:list):
     out_data = []
     for i in range(len(data)):
         _l = []
-        print(data[i])
+        #print(data[i])
         for j in range(len(data[i])):
             if fields[j] == 'STAMP':
                 _l.append([data[i][j], data[i][j+1]])
@@ -125,10 +132,11 @@ formatted_fields = [x for x in fields if x != 'STAMP']
 
 def print_fields(fields):
     for i in range(len(fields)):
-        print(fields[i], end='')
+        #print(fields[i], end='')
         if i < len(fields) - 1:
-            print(',', end='')
-    print()
+            pass
+            #print(',', end='')
+    #print()
 
 try:
     #print_fields([x for x in fields if x != 'STAMP'])
@@ -141,10 +149,30 @@ except Exception as e:
     #print(e)
     pass
 
+#exit(0)
+
 fig = go.Figure()
+
+fig.update_layout(title=sys.argv[1])
 
 for i in range(len(formatted_fields)):
     #fig.add_trace(go.Scatter(x=[j for j in range(len(normalized_data))], y=[_y[i] for _y in normalized_data], name=formatted_fields[i]))
     fig.add_trace(go.Scatter(x=[_x[i][0] for _x in normalized_pairs], y=[_y[i][1] for _y in normalized_pairs], name=formatted_fields[i]))
+
+for marker in markers:
+    #fig.add_trace(go.Scatter(x=[marker[0]], y=[marker[1]], mode='markers', name='Marker'))
+    fig.add_shape(dict(
+        type="line",
+        x0=marker[1],
+        x1=marker[1],
+        y0=0,
+        y1=1,
+        xref="x",
+        yref="paper",
+        line=dict(
+            color="Red",
+            width=1
+        )
+    ))
 
 fig.show()
