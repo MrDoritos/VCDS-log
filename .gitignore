@@ -1,3 +1,5 @@
 gnuplot
 *.csv#
 logs
+*.txt
+__pycache__
