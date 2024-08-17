@@ -175,13 +175,26 @@ except Exception as e:
 
 #exit(0)
 
+def get_values(data, fields):
+	return [data[f][1] for f in fields]
+
+def mult(data):
+	#print(data)
+	return sum(data)/len(data)
+
 fig = go.Figure()
 
 fig.update_layout(title=sys.argv[1])
 
+sort_fields = [9]
+normalized_pairs.sort(key=lambda x: mult(get_values(x, sort_fields)))
+
 for i in range(len(formatted_fields)):
 	#fig.add_trace(go.Scatter(x=[j for j in range(len(normalized_data))], y=[_y[i] for _y in normalized_data], name=formatted_fields[i]))
-	fig.add_trace(go.Scatter(x=[_x[i][0] for _x in normalized_pairs], y=[_y[i][1] for _y in normalized_pairs], name=formatted_fields[i]))
+	#X = [_x[sort_field][1] for _x in normalized_pairs]
+	X = [mult(get_values(_x, sort_fields)) for _x in normalized_pairs]
+	#X = [_x[i][0] for _x in normalized_pairs]
+	fig.add_trace(go.Scatter(x=X, y=[_y[i][1] for _y in normalized_pairs], name=formatted_fields[i]))
 
 for marker in markers:
 	#fig.add_trace(go.Scatter(x=[marker[0]], y=[marker[1]], mode='markers', name='Marker'))

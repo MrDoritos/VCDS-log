@@ -185,9 +185,10 @@ def determine_variables(time):
     liters_per_stroke = values['liters per stroke'] = volume_per_stroke * 1000 # l/s
     bore = values['bore'] = 0.0825 # m
     stroke = values['stroke'] = 0.0928 # m
+    compression_ratio = values['compression ratio'] = 10.5
     cylinder_volume = values['cylinder volume'] = (np.pi * (bore / 2)**2 * stroke) # m^3
     liters_per_cylinder = values['liters per cylinder'] = cylinder_volume * 1000 # l
-
+    ideal_air_mass_per_cylinder = values['ideal air mass per stroke'] = cylinder_volume * air_density # g
 
     values['intake permeance'] = intake_volumetric_flow / cylinder_volume 
     values['cylinder fill %'] = volume_per_stroke / cylinder_volume
@@ -200,6 +201,19 @@ def determine_variables(time):
     fuel_volume_per_second = values['fuel volume per second'] = fuel_volume_per_stroke * intake_strokes_per_second # m^3/s
     fuel_usage_per_hour = values['fuel usage per hour'] = fuel_volume_per_second * 3600 # m^3/h
     fuel_liters_per_hour = values['fuel liters per hour'] = fuel_usage_per_hour * 1000 # l/h
+    ms_times_p = values['inj ms x p'] = inj_avg * rail_avg
+
+    total_energy = values['total energy'] = (fuel_mass_per_stroke * (1 / lambda_avg)) * 44000 # J/stroke
+    used_energy = values['used energy'] = total_energy * 0.25 # J/stroke
+    combustion_power = values['combustion power per second'] = used_energy * intake_strokes_per_second # W
+    angular_velocity = values['angular velocity'] = rpm_avg * 2 * np.pi / 60 # rad/s
+    angular_acceleration = values['angular acceleration'] = angular_velocity * (rpm_avg/60) # rad/s^2
+    torque = values['torque'] = combustion_power / angular_acceleration # Nm
+    max_ftlb_torque = 148
+    max_torque = values['max torque in J'] = 148 / 0.7376 # J
+    hp = values['horsepower'] = combustion_power * 0.74 * rpm_avg / 5252 # hp
+    max_hp = values['max horsepower'] = max_ftlb_torque * 4000 * 60 / 5252 # hp
+    driveline_power = values['driveline power'] = rpm_avg
 
 
 
@@ -213,16 +227,58 @@ def determine_variables(time):
                 'liters per stroke:', liters_per_stroke)
     '''
     #print(values)
-    print_dict(values)
+    #print_dict(values)
     
 
 
     print()
 
+    return values
 
-determine_variables(123.0)
-determine_variables(212.0)
-determine_variables(275.0)
 
+tp = [
+    determine_variables(t) for t in range(100, int(log.time_length)-5, 5)
+    #determine_variables(123.0),
+    #determine_variables(212.0),
+    #determine_variables(275.0),
+]
+
+tp.sort(key=lambda x : x['revolutions per minute'])
+
+def norm(v,x):
+    max = np.max(x)
+    min = np.min(x)
+    if max == min or v == min:
+        return 0
+    return (v - min) / (max - min)
+
+dict_combined = dict()
+for x in tp:
+    for k in x:
+        if k not in dict_combined:
+            dict_combined[k] = []
+        dict_combined[k].append(norm(x[k], [x_[k] for x_ in tp]))
+
+print(dict_combined)
+
+#print(np.corrcoef([dict_combined['revolutions per minute'], dict_combined['throttle valve angle'], dict_combined['mass air flow']]))
+
+import plotly.express as px
+import plotly.graph_objects as go
+
+fig = go.Figure()
+fig.update_layout(title='Model')
+
+#for i in range(len(dict_combined['time'])):
+for k,v in dict_combined.items():
+    #[_x for _x in dict_combined['mass air flow']], 
+    #[(dict_combined['injection ms'][_i] * dict_combined['actual fuel rail pressure'][_i]) for _i in range(len(v))],
+    fig.add_trace(go.Scatter(x=[_x for _x in dict_combined['revolutions per minute']], 
+                                y=[_y for _y in v], 
+                                name=f'{k}'))
+
+print('points:', len(dict_combined['time']))
+
+fig.show()
 
 print('Done')
