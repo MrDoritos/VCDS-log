@@ -1,6 +1,5 @@
 #!/bin/python3
 
-from audioop import getsample
 import os
 import sys
 import time
@@ -201,7 +200,11 @@ class LoadLog:
 
     def parse(self, stream):
 
-        for x in range(5): stream.readline()
+        for x in range(2): stream.readline()
+
+        self.in_blocks = [x.strip() for x in stream.readline().split(',') if x.strip() != '']
+
+        for x in range(2): stream.readline()
 
         self.in_fields = [x.strip() for x in stream.readline().split(',') if x.strip() != '']
 
