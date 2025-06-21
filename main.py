@@ -7,7 +7,7 @@ import time
 import plotly.express as px
 import plotly.graph_objects as go
 
-fin = open(sys.argv[1], 'r') if len(sys.argv) > 1 else sys.stdin
+fin = open(sys.argv[1], 'r', encoding='cp1252') if len(sys.argv) > 1 else sys.stdin
 fout = sys.stdout
 normalize = 'norm' in sys.argv
 
